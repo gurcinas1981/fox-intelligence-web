@@ -20,6 +20,18 @@ The single source of truth for how FOX products fit together. Read this before s
 | Presentation | FOX Atlas / FOX Design | gurcinas1981/FOX-ATLAS | fox-atlas | foxatlas.co.uk, fox-atlas.com, projectname.foxatlas.co.uk | Digital Land ID microsites, masterplans, marketing |
 | Corporate | FOX Intelligence | gurcinas1981/foxintelligence-site (fox-intelligence-web is older) | fox-intelligence | foxintelligence.co.uk | Parent brand |
 
+### Access policy (owner instruction, Oct 2026)
+
+| Private — FOX gate (public opener + Request access; sign-in by invitation) | Public — open to everyone |
+|---|---|
+| ORBIT, Land IQ, NEXUS, Land Search, Planning RADAR | foxintelligence.co.uk, www.foxatlas.co.uk, Land Passport, Derby Pilot |
+
+- The gate is `middleware.js`, generated from `fox-orbit/gate/` (template, per-platform settings, tests). Never edit a platform's copy by hand and never delete it.
+- Access requests from every private opener go to the one FOX register (foxintelligence.co.uk `/api/subscribe` → admin CSV + NEXUS).
+- Granting someone access = add a sign-in line to `FOX_GATE_USERS` (made on `/fox/account`) or a `name:code` pair to `FOX_GATE_CODES` on that platform. Owner signs in once across *.foxintelligence.co.uk (shared `FOX_SESSION_SECRET`).
+- NEXUS and Land Search deploy by upload: their deployments must include `fox-gate/fox-gate-install.sh` + `buildCommand` (see each repo's `fox-gate/README.md`).
+- `fox-orbit/.github/workflows/ecosystem-monitor.yml` checks all nine platforms hourly and fails (e-mail) if any private one is open or any public one is gated or down.
+
 Client microsites (stoneleigh-farm, netherhousemews, rose-cottage-fold, vantage, nuncargate-collection) sit under FOX Atlas.
 
 Vercel team: Fox (slug `foxatlas`). Brand architecture: "Fox Atlas — powered by FOX Intelligence". Never invent a new product name, subdomain or brand line without asking Tomas.

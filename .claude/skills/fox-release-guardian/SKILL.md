@@ -12,6 +12,7 @@ No FOX change reaches production without evidence and approval.
 1. Never deploy to production, apply a production migration, change DNS, or alter access permissions without Tomas's explicit approval in the current conversation.
 2. Every production change must have a written rollback path before it ships.
 3. "It should work" is not evidence. Show test output, screenshots or logs.
+4. Private platforms (ORBIT, Land IQ, NEXUS, Land Search, Planning RADAR) must ship with their FOX gate. After any release, anonymous `GET /` must return the opener (`X-Fox-Gate-View: opener`) and `/fox/health` must show `session` and `users` or `codes` true. Public platforms must load without the gate.
 
 ## Release chain
 
