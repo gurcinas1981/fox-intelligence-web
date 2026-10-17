@@ -29,6 +29,27 @@ const json = (value: unknown, status = 200) => new Response(JSON.stringify(value
   status, headers: { 'content-type': 'application/json' },
 });
 
+test('non-object JSON bodies are rejected without external requests', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  for (const body of [null, [], 'site', 42]) assert.equal((await POST(request(body))).status, 400);
+  assert.equal(calls.length, 0);
+});
+test('non-text input fields are rejected before missing-key or provider checks', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  for (const field of ['address', 'postcode', 'siteArea', 'currentUse', 'planningRef', 'notes']) {
+    for (const value of [123, null, {}, []]) {
+      assert.equal((await POST(request({ address: 'Derby DE1 3AH', [field]: value }))).status, 400);
+    }
+  }
+  assert.equal(calls.length, 0);
+});
+test('malformed JSON returns 400 rather than an internal server error', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const req = new NextRequest('http://localhost/api/analyse', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{' });
+  assert.equal((await POST(req)).status, 400);
+  assert.equal(calls.length, 0);
+});
+
 for (const address of [undefined, '   ', 'abc']) {
   test(`rejects missing or short address: ${JSON.stringify(address)}`, async () => {
     const response = await POST(request({ address }));

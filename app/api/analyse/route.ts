@@ -343,7 +343,20 @@ const appraisalSchema = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as Input;
+    let payload: unknown;
+    try { payload = await req.json(); }
+    catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return NextResponse.json({ error: "Body must be a JSON object." }, { status: 400 });
+    }
+    const fields = ["address", "postcode", "siteArea", "currentUse", "planningRef", "notes"] as const;
+    for (const field of fields) {
+      const value = (payload as Record<string, unknown>)[field];
+      if (value !== undefined && typeof value !== "string") {
+        return NextResponse.json({ error: `${field} must be text.` }, { status: 400 });
+      }
+    }
+    const body = payload as Input;
     const address = body.address?.trim();
 
     if (!address || address.length < 5) {
