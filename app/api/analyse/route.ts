@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { authorizeAppraisal, reserveAppraisal } from "@/lib/appraisal-access";
 import { SYSTEM_PROMPT, buildUserPrompt } from "@/lib/prompt";
 
 export const runtime = "nodejs";
@@ -343,7 +344,22 @@ const appraisalSchema = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as Input;
+    const denied = authorizeAppraisal(req);
+    if (denied) return denied;
+    let payload: unknown;
+    try { payload = await req.json(); }
+    catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return NextResponse.json({ error: "Body must be a JSON object." }, { status: 400 });
+    }
+    const fields = ["address", "postcode", "siteArea", "currentUse", "planningRef", "notes"] as const;
+    for (const field of fields) {
+      const value = (payload as Record<string, unknown>)[field];
+      if (value !== undefined && typeof value !== "string") {
+        return NextResponse.json({ error: `${field} must be text.` }, { status: 400 });
+      }
+    }
+    const body = payload as Input;
     const address = body.address?.trim();
 
     if (!address || address.length < 5) {
@@ -364,9 +380,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const limited = await reserveAppraisal();
+    if (limited) return limited;
+
     const openData = await gatherOpenData(address, body.postcode);
     const analysisDate = new Date().toISOString().slice(0, 10);
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({ apiKey, maxRetries: 0 });
 
     const response = await client.responses.create({
       model: process.env.OPENAI_MODEL || "gpt-5.6-terra",
@@ -433,9 +452,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Unexpected error while generating the appraisal."
+          "Unable to generate the appraisal. Please try again later."
       },
       { status: 500 }
     );
