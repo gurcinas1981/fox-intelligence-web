@@ -47,11 +47,11 @@ npm run build
 ```
 
 CI runs these checks on Linux and Windows for every pull request and main push.
-The eight offline tests cover input validation, missing server configuration, mocked evidence/AI responses, score recalculation, lookup failure disclosure, invalid AI output and prompt context. They require no API keys or paid requests. Live AI quality and deployment behaviour need separate verification.
+The offline tests cover input validation, missing server configuration, mocked evidence/AI responses, score recalculation, lookup failure disclosure, invalid AI output and prompt context. They require no API keys or paid requests. Live AI quality and deployment behaviour need separate verification.
 
 ## Deployment
 
-Import this repository into Vercel or another Next.js-compatible host and add the same two environment variables securely on the host.
+Import this repository into Vercel or another Next.js-compatible host and add the environment variables from `.env.example` securely on the host.
 
 Do not put the OpenAI API key in client-side code or commit it to GitHub.
 
@@ -73,3 +73,31 @@ Do not put the OpenAI API key in client-side code or commit it to GitHub.
 - PDF report generator
 - FOX Atlas integration
 - ChatGPT plugin / remote MCP surface
+
+## Paid endpoint access and request limits
+
+`POST /api/analyse` requires `Authorization: Bearer <APPRAISAL_ACCESS_TOKEN>`.
+Set a random server-only access code of at least 32 characters. The browser asks
+for this code and keeps it only in component memory; it is never put in URLs or
+persistent browser storage. This is private operator access, not individual user
+accounts, subscriptions or billing. Rotate the code if it is disclosed.
+
+Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for a dedicated
+Upstash-compatible Redis REST database. An atomic Lua reservation caps the whole
+service at 3 attempts per UTC-aligned 10-minute window and 20 per UTC day, shared
+across instances and callers. Limits do not depend on spoofable client IP headers.
+Failed provider attempts still count. Fixed windows can allow adjacent-window
+bursts; these are request caps, not a currency spending guarantee. OpenAI automatic
+retries are disabled. Use provider budget controls separately.
+
+Missing access or Redis configuration, Redis errors and timeouts disable paid
+requests (503); incorrect codes return 401; exhausted limits return 429 with
+Retry-After. Authorization runs before body parsing and all network activity;
+validated requests reserve quota before evidence gathering or AI calls.
+
+Before activating, configure these secrets privately for the intended environment,
+use separate Redis databases/access codes for preview and production, and verify
+Vercel Deployment Protection for both preview and production URLs in project
+settings. Platform protection is an additional layer; it does not replace endpoint
+authorization. Never expose these secrets through NEXT_PUBLIC_ variables or Git.
+No production credentials or deployment settings are changed by this PR.

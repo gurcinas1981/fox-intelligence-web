@@ -32,6 +32,7 @@ export default function Home() {
     notes: ""
   });
   const [result, setResult] = useState<AnyObject | null>(null);
+  const [accessCode, setAccessCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +59,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/analyse", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessCode}` },
         body: JSON.stringify(form)
       });
       const data = await response.json();
@@ -131,6 +132,12 @@ export default function Home() {
           </div>
 
           <div className="fields">
+            <label className="wide">
+              Appraisal access code *
+              <input type="password" required autoComplete="off" value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)} />
+              <small>Request a private access code from the operator.</small>
+            </label>
             <label className="wide">
               Site address / site name *
               <input
