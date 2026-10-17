@@ -32,11 +32,22 @@ OPENAI_MODEL=gpt-5.6-terra
 Then:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Open http://localhost:3000.
+
+## Checks
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+CI runs these checks on Linux and Windows for every pull request and main push.
+The eight offline tests cover input validation, missing server configuration, mocked evidence/AI responses, score recalculation, lookup failure disclosure, invalid AI output and prompt context. They require no API keys or paid requests. Live AI quality and deployment behaviour need separate verification.
 
 ## Deployment
 
